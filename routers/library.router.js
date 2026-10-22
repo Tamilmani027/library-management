@@ -1,5 +1,5 @@
 import express from 'express';
-import { addBook, addMember, borrowBook, getAllbooks, returnBook } from '../controllers/library.controller.js';
+import { addBook, addMember, borrowBook, getAllbooks, getAllMemebers, getBorrowed, returnBook } from '../controllers/library.controller.js';
 
 const router=express.Router();
 
@@ -12,6 +12,10 @@ router.post('/borrow/:bookId', borrowBook);
 router.put('/return/:borrowId',returnBook);
 
 router.get('/books',getAllbooks);
+
+router.get('/borrowed',getBorrowed);
+
+router.get('/members',getAllMemebers);
 
 
 

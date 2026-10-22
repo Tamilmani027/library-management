@@ -217,7 +217,7 @@ export const returnBook=(req,res)=>{
 // 5. Get All Books
 
 export const getAllbooks=(req,res)=>{
-    if (!books){
+    try {if (!books){
         return res.status(404).json({
             success:false,
             message:"No books found"
@@ -228,5 +228,68 @@ export const getAllbooks=(req,res)=>{
         success:true,
         data:books
     })
+} catch (error){
+     return res.status(500).json({
+        success: false,
+        message: error.message
+    });
+}
 
 }
+
+
+// 6. Get All Borrowed Books
+
+export const getBorrowed = (req, res) => {
+    try {
+
+        const borrowedBooks = borrowRecords.map((br) => {
+
+            const book = books.find(bk => bk.id === br.bookId);
+            const member = members.find(m => m.id === br.memberId);
+
+            return {
+                borrowId: br.id,
+                bookTitle: book?.bookTitle || "Book not found",
+                memberName: member?.memberName || "Member not found",
+                borrowDate: br.borrowDate,
+                returnDate: br.returnDate,
+                status: br.status
+            };
+        });
+
+        return res.status(200 ).json({
+            success: true,
+            data: borrowedBooks
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// 7. Get All Members 
+
+export const getAllMemebers=(req,res)=>{
+     try {if (!members){
+        return res.status(404).json({
+            success:false,
+            message:"No members found"
+        })
+    }
+
+    res.json({
+        success:true,
+        data:members
+    })
+} catch (error){
+     return res.status(500).json({
+        success: false,
+        message: error.message
+    });
+}
+
+};
