@@ -213,3 +213,20 @@ export const returnBook=(req,res)=>{
     }
 
 }
+
+// 5. Get All Books
+
+export const getAllbooks=(req,res)=>{
+    if (!books){
+        return res.status(404).json({
+            success:false,
+            message:"No books found"
+        })
+    }
+
+    res.json({
+        success:true,
+        data:books
+    })
+
+}
