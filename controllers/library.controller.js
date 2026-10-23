@@ -1,32 +1,7 @@
 import Book from "../models/books.schema.js";
+import BorrowRecords from "../models/borrowRecordschema.js";
+import Member from "../models/members.schema.js";
 
-const books = [{
-   "id": 1,
-   "title": "Atomic Habits",
-   "author": "James Clear",
-   "category": "Self Help",
-   "totalCopies": 5,
-   "availableCopies": 5
-}
-];
-
-const members=[{
-   "id": 1,
-   "name": "John",
-   "email": "john@gmail.com",
-   "phone": "9876543210"
-}
-];
-
-const borrowRecords=[{
-   "id": 1,
-   "bookId": 1,
-   "memberId": 1,
-   "borrowDate": "2026-07-05",
-   "returnDate": "2026-07-12",
-   "status": "borrowed"
-}
-];
 
 // 1. Add new Book
 export const addBook = async (req, res) => {
@@ -50,11 +25,7 @@ export const addBook = async (req, res) => {
 
         // books.push(newBook);
 
-        return res.status(201).json({
-            success: true,
-            message: "Book created successfully",
-            data: newBook
-        });
+        return res.status(201).json({message: "Book created successfully", data: newBook});
 
     } catch (error) {
         console.error(error);
@@ -63,24 +34,23 @@ export const addBook = async (req, res) => {
 };
 
 // 2. Register a new Member
-export const addMember=(req,res)=>{
+export const addMember= async (req,res)=>{
 	try{
 			const {name,email,phone}=req.body;
- 			if (!name || !email || !phone){
-            return res.status(400).json({
-                success: false,
-                message: "Missing required fields"
-            });
-        }
+ 			// if (!name || !email || !phone){
+            // return res.status(400).json({
+            //    success: false,
+            //    message: "Missing required fields"
+            // });
+        // }
 
-        const newBook = {
-					id:members.length+1,
-          name,
-					email,
-					phone:Number(phone)
-        };
+        const newBook = await Member.create({
+				name,
+                email,
+                phone
+        });
 
-        members.push(newBook);
+        // members.push(newBook);
 
         return res.status(201).json({
             success: true,
@@ -93,7 +63,6 @@ export const addMember=(req,res)=>{
 
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error",
             error: error.message
         });
     }
@@ -101,20 +70,19 @@ export const addMember=(req,res)=>{
 }
 
 // 3. Borrow a Book
-
-export const borrowBook=(req,res)=>{
+export const borrowBook= async (req,res)=>{
 try {
-    const bookId = Number(req.params.bookId);
+    const {bookId} = req.params;
     const { memberId, borrowDate, returnDate } = req.body;
 
-    if (!memberId || !borrowDate || !returnDate) {
-        return res.status(400).json({
-            success: false,
-            message: "All fields are required"
-        });
-    }
+    // if (!memberId || !borrowDate || !returnDate) {
+    //    return res.status(400).json({
+    //        success: false,
+    //        message: "All fields are required"
+    //    });
+    //}
 
-    const book = books.find(bk => bk.id === bookId);
+    const book =await Book.findById(bookId);
 
     if (!book) {
         return res.status(404).json({
@@ -123,7 +91,7 @@ try {
         });
     }
 
-    const member = members.find(m => m.id === Number(memberId));
+    const member =await Member.findById(memberId);
 
     if (!member) {
         return res.status(404).json({
@@ -139,18 +107,17 @@ try {
         });
     }
 
-    book.availableCopies--;
+    book.availableCopies-=1;
+    await book.save();
 
-    const newBorrowRecord = {
-        id: borrowRecords.length + 1,
+    const newBorrowRecord = await BorrowRecords.create({
         bookId,
-        memberId: Number(memberId),
+        memberId,
         borrowDate,
-        returnDate,
-        status: "borrowed"
-    };
+        returnDate
+    });
 
-    borrowRecords.push(newBorrowRecord);
+   // borrowRecords.push(newBorrowRecord);
 
     return res.status(201).json({
         success: true,
@@ -159,19 +126,16 @@ try {
     });
 
 } catch (error) {
-    return res.status(500).json({
-        success: false,
-        message: error.message
-    });
+    return res.status(500).json({message: error.message});
 }
 }
 
 // 4. Return a Book
 
-export const returnBook=(req,res)=>{
+export const returnBook= async (req,res)=>{
     try{
-        const borrowId=Number(req.params.borrowId);
-        const borrowBook=borrowRecords.find(b=>b.id==borrowId);
+        const {borrowId} = req.params;
+        const borrowBook= await BorrowRecords.findById(borrowId);
 
         if (!borrowBook) {
         return res.status(404).json({
@@ -185,7 +149,7 @@ export const returnBook=(req,res)=>{
                 message: "Book already returned"
             });
         }
-        const book=books.find(b=>b.id==borrowId);
+        const book=await Book.findById(borrowBook.bookId);
         if (!book) {
             return res.status(404).json({
                 success: false,
@@ -194,8 +158,9 @@ export const returnBook=(req,res)=>{
         }
         
         borrowBook.status='returned';
+        await borrowBook.save();
         book.availableCopies+= 1;
-
+        await book.save();
         return res.status(200).json({
             success:true,
             message:'Book returned'
@@ -214,8 +179,10 @@ export const returnBook=(req,res)=>{
 
 // 5. Get All Books
 
-export const getAllbooks=(req,res)=>{
-    try {if (!books){
+export const getAllbooks=async (req,res)=>{
+    try {
+        const books=await Book.find();
+        if (!books){
         return res.status(404).json({
             success:false,
             message:"No books found"
@@ -237,49 +204,48 @@ export const getAllbooks=(req,res)=>{
 
 
 // 6. Get All Borrowed Books
+export const getBorrowed = async (req, res) => {
+  try {
 
-export const getBorrowed = (req, res) => {
-    try {
+    const borrowRecords = await BorrowRecords.find()
+      .populate("bookId")
+      .populate("memberId");
 
-        const borrowedBooks = borrowRecords.map((br) => {
+    const borrowedBooks = borrowRecords.map(br => ({
+      borrowId: br._id,
+      bookTitle: br.bookId?.title || "Book not found",
+      memberName: br.memberId?.name || "Member not found",
+      borrowDate: br.borrowDate,
+      returnDate: br.returnDate,
+      status: br.status
+    }));
 
-            const book = books.find(bk => bk.id === br.bookId);
-            const member = members.find(m => m.id === br.memberId);
+    return res.status(200).json({
+      success: true,
+      data: borrowedBooks
+    });
 
-            return {
-                borrowId: br.id,
-                bookTitle: book?.bookTitle || "Book not found",
-                memberName: member?.memberName || "Member not found",
-                borrowDate: br.borrowDate,
-                returnDate: br.returnDate,
-                status: br.status
-            };
-        });
-
-        return res.status(200 ).json({
-            success: true,
-            data: borrowedBooks
-        });
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
 };
 
 // 7. Get All Members 
 
-export const getAllMemebers=(req,res)=>{
-     try {if (!members){
+export const getAllMemebers=async (req,res)=>{
+     try {
+        const members=await Member.find();
+        if (!members){
         return res.status(404).json({
             success:false,
             message:"No members found"
         })
     }
 
-    res.json({
+    res.status(201).json({
         success:true,
         data:members
     })
