@@ -1,3 +1,5 @@
+import Book from "../models/books.schema.js";
+
 const books = [{
    "id": 1,
    "title": "Atomic Habits",
@@ -7,6 +9,7 @@ const books = [{
    "availableCopies": 5
 }
 ];
+
 const members=[{
    "id": 1,
    "name": "John",
@@ -14,6 +17,7 @@ const members=[{
    "phone": "9876543210"
 }
 ];
+
 const borrowRecords=[{
    "id": 1,
    "bookId": 1,
@@ -25,27 +29,26 @@ const borrowRecords=[{
 ];
 
 // 1. Add new Book
-export const addBook = (req, res) => {
+export const addBook = async (req, res) => {
     try {
-        const {title,author,category,totalCopies} = req.body;
+         const {title,author,category,totalCopies} = req.body;
 
-        if (!title || !author || !category || totalCopies===undefined) {
-            return res.status(400).json({
-                success: false,
-                message: "Missing required fields"
-            });
-        }
+        // if (!title || !author || !category || totalCopies===undefined) {
+        //    return res.status(400).json({
+        //        success: false,
+        //        message: "Missing required fields"
+        //   });
+        //}
 
-        const newBook = {
-						id:books.length+1,
-            title,
+        const newBook =await Book.create({
+                        title,
 						author,
 						category,
-						totalCopies:Number(totalCopies),
+						totalCopies,
 						availableCopies:Number(totalCopies)
-        };
+        });
 
-        books.push(newBook);
+        // books.push(newBook);
 
         return res.status(201).json({
             success: true,
@@ -55,12 +58,7 @@ export const addBook = (req, res) => {
 
     } catch (error) {
         console.error(error);
-
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server Error",
-            error: error.message
-        });
+        return res.status(500).json({error: error.message});
     }
 };
 
