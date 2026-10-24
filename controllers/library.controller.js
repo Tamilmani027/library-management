@@ -138,29 +138,24 @@ export const returnBook= async (req,res)=>{
         const borrowBook= await BorrowRecords.findById(borrowId);
 
         if (!borrowBook) {
-        return res.status(404).json({
-            success: false,
-            message: "Borrow record not found"
-        });
-    }
+            return res.status(404).json({message: "Borrow record not found"});
+            }
+
         if (borrowBook.status === "returned") {
-            return res.status(400).json({
-                success: false,
-                message: "Book already returned"
-            });
+            return res.status(400).json({message: "Book already returned"});
         }
+
         const book=await Book.findById(borrowBook.bookId);
+
         if (!book) {
-            return res.status(404).json({
-                success: false,
-                message: "Book not found"
-            });
+            return res.status(404).json({message: "Book not found"});
         }
         
         borrowBook.status='returned';
         await borrowBook.save();
         book.availableCopies+= 1;
         await book.save();
+
         return res.status(200).json({
             success:true,
             message:'Book returned'
